@@ -40,10 +40,10 @@ if [ -z "$TOKEN" ]; then
   exit 1
 fi
 
-# Detect OS and pick managed settings path
+# Detect OS and pick managed settings path + the OS-typical owner group
 case "$(uname -s)" in
-  Linux*)   SETTINGS_DIR="/etc/claude-code" ;;
-  Darwin*)  SETTINGS_DIR="/Library/Application Support/ClaudeCode" ;;
+  Linux*)   SETTINGS_DIR="/etc/claude-code";                        OWNER="root:root" ;;
+  Darwin*)  SETTINGS_DIR="/Library/Application Support/ClaudeCode";  OWNER="root:wheel" ;;
   *)
     echo "ERROR: Unsupported OS. For Windows, see DEPLOY.md"
     exit 1
@@ -86,11 +86,13 @@ sudo tee "$SETTINGS_FILE" > /dev/null <<EOF
 }
 EOF
 
-# Restrict file to root-only (contains bearer token).
-# Use "root:" (trailing colon) so chown picks root's primary group: "root"
-# on Linux, "wheel" on macOS (where no "root" group exists).
-sudo chown root: "$SETTINGS_FILE"
-sudo chmod 600 "$SETTINGS_FILE"
+# Owner = root (so a normal user can't tamper with the policy file), but mode
+# 0644 so the NON-root user that runs Claude Code can READ it. A 0600 root file
+# is invisible to Claude Code (it runs as the user, not root) and the telemetry
+# config silently never applies.
+# Tradeoff: the bearer token in this file is readable by any local user.
+sudo chown "$OWNER" "$SETTINGS_FILE"
+sudo chmod 0644 "$SETTINGS_FILE"
 
 # Verify the endpoint is reachable (real OTLP POST, not HEAD)
 echo "Testing connection to $ENDPOINT..."

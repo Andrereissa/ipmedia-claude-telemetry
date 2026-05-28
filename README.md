@@ -19,8 +19,8 @@ You need:
 ### Recommended (token via interactive prompt — never enters shell history)
 
 ```bash
-REF=v1
-SHA256=d8e4a9b8f47bb2214b11139a979c71517d2205b2f34ae8098d0328343d31409a
+REF=v2
+SHA256=cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae
 
 curl -fsSLO "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/install-telemetry.sh"
 echo "${SHA256}  install-telemetry.sh" | shasum -a 256 -c -
@@ -77,8 +77,12 @@ contents you don't pass to Claude.
 
 ## Security notes
 
-- The bearer token is stored in `managed-settings.json` with mode `0600`
-  (root-only readable).
+- `managed-settings.json` is written as `root`-owned with mode `0644`
+  (world-readable on the machine). It **cannot** be `0600`: Claude Code runs
+  as your normal user, not root, so a root-only file is invisible to it and the
+  telemetry config silently never applies. The price is that the bearer token
+  in this file is readable by any local user — treat every machine with this
+  file installed as having the shared OTLP token exposed locally.
 - The script verifies a real OTLP POST to `/v1/traces` after install — fails
   loudly on bad token, network, or stack misconfiguration.
 - Always pin `REF` to a tag (or a commit SHA) and check the `SHA256` so a
@@ -90,6 +94,8 @@ This is a public mirror of the installer maintained internally in
 `meupatrocinio/team-ai-infra/monitoring/scripts/install-telemetry.sh` (private).
 Changes:
 
-- `chown root:root` → `chown root:` so it works on macOS (no `root` group on
-  Darwin, just `wheel`).
+- macOS ownership: `root:wheel` (Darwin has no `root` group; upstream's
+  `chown root:root` fails there).
+- Mode `0644` instead of `0600` so Claude Code (running as the user) can read
+  the policy file. See Security notes for the tradeoff.
 - URL in the curl-pipe usage comment points to this public repo.
