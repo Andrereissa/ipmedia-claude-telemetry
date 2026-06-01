@@ -10,8 +10,10 @@ prompt) and is never committed anywhere.
 
 | Pinned artifact | Tag | SHA256 |
 |---|---|---|
-| `install-telemetry.sh` (macOS/Linux) | `v4` | `cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae` |
-| `install-telemetry.ps1` (Windows) | `v4` | `d088578d419a93f3ab6e68788d6c4b3caf94b4bf5a3636c9f54e854c9d9e249f` |
+| `install-telemetry.sh` (macOS/Linux) | `v5` | `cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae` |
+| `install-telemetry.ps1` (Windows) | `v5` | `d088578d419a93f3ab6e68788d6c4b3caf94b4bf5a3636c9f54e854c9d9e249f` |
+| `verify-telemetry.sh` (macOS/Linux) | `v5` | `0bf7f0156afe219ca18c813a62c7addcd5a30e6f56011e84d35fe05aef0adce1` |
+| `verify-telemetry.ps1` (Windows) | `v5` | `23d3c856537c70381643e1ecd5088863d661e3b4937b561f67e6c81729cd9e83` |
 
 ## Install — macOS / Linux
 
@@ -86,6 +88,53 @@ $env:OTLP_TOKEN = '<token>'; .\install-telemetry.ps1
 ```
 
 ## Verify
+
+Two ways. Pick the **diagnostic script** if a dev reports "no data in the
+dashboard" — it tells you which of the three failure modes you hit (file
+missing, file unreadable by user, backend unreachable). Pick the **quick
+grep** if you just want a sanity check.
+
+### Diagnostic script (recommended)
+
+Runs as the **normal user** (not elevated/sudo) — the whole point is to
+verify that Claude Code, which also runs as the user, can read the config.
+
+```bash
+# macOS / Linux
+REF=v5
+SHA256=0bf7f0156afe219ca18c813a62c7addcd5a30e6f56011e84d35fe05aef0adce1
+
+curl -fsSLO "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/verify-telemetry.sh"
+echo "${SHA256}  verify-telemetry.sh" | shasum -a 256 -c -
+chmod +x verify-telemetry.sh
+./verify-telemetry.sh
+```
+
+```powershell
+# Windows (normal PowerShell, NOT elevated)
+$ref = 'v5'
+$sha = '23d3c856537c70381643e1ecd5088863d661e3b4937b561f67e6c81729cd9e83'
+
+Invoke-WebRequest -UseBasicParsing `
+  -Uri "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/$ref/verify-telemetry.ps1" `
+  -OutFile verify-telemetry.ps1
+if ((Get-FileHash -Algorithm SHA256 verify-telemetry.ps1).Hash -ne $sha.ToUpper()) {
+  throw "checksum mismatch - do not run"
+}
+powershell -ExecutionPolicy Bypass -File .\verify-telemetry.ps1
+```
+
+Exit code is `0` on success. Possible outputs:
+
+| Output | What it means |
+|---|---|
+| `Connection: OK (2xx)` | Healthy. Restart Claude Code; data lands within ~60 s |
+| `Connection: FAILED (HTTP 401/403)` | Token rejected. Reinstall with the correct token |
+| `Connection: FAILED (HTTP 000)` | Network/DNS/firewall blocking the endpoint |
+| `BROKEN INSTALL: ... not readable by you` | File is mode 0600 (pre-v2 install). Reinstall |
+| `NOT INSTALLED: ... does not exist` | Run the installer first |
+
+### Quick grep
 
 ```bash
 # macOS
