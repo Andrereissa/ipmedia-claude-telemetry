@@ -10,8 +10,8 @@ prompt) and is never committed anywhere.
 
 | Pinned artifact | Tag | SHA256 |
 |---|---|---|
-| `install-telemetry.sh` (macOS/Linux) | `v3` | `cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae` |
-| `install-telemetry.ps1` (Windows) | `v3` | `b3e77bea643693cf21da49b8886cbaccf89bdebe675885e89d9e084f0bd659eb` |
+| `install-telemetry.sh` (macOS/Linux) | `v4` | `cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae` |
+| `install-telemetry.ps1` (Windows) | `v4` | `d088578d419a93f3ab6e68788d6c4b3caf94b4bf5a3636c9f54e854c9d9e249f` |
 
 ## Install — macOS / Linux
 
@@ -24,7 +24,7 @@ You need:
 ### Recommended (token via interactive prompt — never enters shell history)
 
 ```bash
-REF=v3
+REF=v4
 SHA256=cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae
 
 curl -fsSLO "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/install-telemetry.sh"
@@ -53,7 +53,7 @@ sudo OTLP_TOKEN='<token>' ./install-telemetry.sh
 
 You need:
 
-- Windows 10 1803+ (ships `curl.exe`, used for the connectivity test)
+- Windows PowerShell 5.1+ or PowerShell 7+ (no external dependencies)
 - An **elevated PowerShell** (Run as Administrator)
 - The **OTLP token** — ask the IPMedia admin
 
@@ -62,8 +62,8 @@ You need:
 Open PowerShell **as Administrator**, then:
 
 ```powershell
-$ref = 'v3'
-$sha = 'b3e77bea643693cf21da49b8886cbaccf89bdebe675885e89d9e084f0bd659eb'
+$ref = 'v4'
+$sha = 'd088578d419a93f3ab6e68788d6c4b3caf94b4bf5a3636c9f54e854c9d9e249f'
 
 Invoke-WebRequest -UseBasicParsing `
   -Uri "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/$ref/install-telemetry.ps1" `
