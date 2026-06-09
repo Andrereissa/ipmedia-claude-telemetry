@@ -19,6 +19,11 @@
   # Env var (CI / fleet)
   $env:OTLP_TOKEN = '<token>'; .\install-telemetry.ps1
 
+.EXAMPLE
+  # Fleet/MDM (skip post-install connectivity probe — install even with no
+  # network at enrollment time)
+  $env:OTLP_TOKEN = '<token>'; $env:SKIP_CONN_TEST = '1'; .\install-telemetry.ps1
+
 .NOTES
   Must run in an elevated PowerShell (Run as Administrator).
   Windows PowerShell 5.1+ or PowerShell 7+. No external dependencies.
@@ -100,27 +105,36 @@ $json = $settings | ConvertTo-Json -Depth 5
 # native exes, so `--data-binary ""` vanished and shifted curl's argv (it then
 # parsed "5" as a URL -> tried 0.0.0.5:80). Native IWR avoids that and needs no
 # curl.exe. Works on both Windows PowerShell 5.1 and PowerShell 7+.
-Write-Host "Testing connection to $Endpoint..."
-$code = 0
-try {
-    $resp = Invoke-WebRequest -Uri "$Endpoint/v1/traces" -Method Post `
-        -Headers @{ Authorization = "Bearer $Token" } `
-        -ContentType 'application/x-protobuf' `
-        -Body ([byte[]]::new(0)) `
-        -TimeoutSec 10 -UseBasicParsing
-    $code = [int]$resp.StatusCode
-} catch {
-    # Non-2xx throws; dig the status code out of the response (5.1 + 7 differ).
-    $r = $_.Exception.Response
-    if ($r -and $r.StatusCode) { $code = [int]$r.StatusCode } else { $code = 0 }
-}
-
-if ($code -ge 200 -and $code -lt 300) {
-    Write-Host "  Connection: OK ($code)"
+#
+# Skipped when SKIP_CONN_TEST=1 — used by fleet/MDM deploys (e.g. Hexnode)
+# where the machine may have no network at enrollment time. In that mode the
+# settings file is still written; telemetry starts flowing the next time
+# Claude Code launches with network.
+if ($env:SKIP_CONN_TEST -eq '1') {
+    Write-Host "Skipping connectivity test (SKIP_CONN_TEST=1)."
 } else {
-    Write-Host "  Connection: FAILED (HTTP $code)"
-    Write-Host "  Check the token or your network."
-    exit 1
+    Write-Host "Testing connection to $Endpoint..."
+    $code = 0
+    try {
+        $resp = Invoke-WebRequest -Uri "$Endpoint/v1/traces" -Method Post `
+            -Headers @{ Authorization = "Bearer $Token" } `
+            -ContentType 'application/x-protobuf' `
+            -Body ([byte[]]::new(0)) `
+            -TimeoutSec 10 -UseBasicParsing
+        $code = [int]$resp.StatusCode
+    } catch {
+        # Non-2xx throws; dig the status code out of the response (5.1 + 7 differ).
+        $r = $_.Exception.Response
+        if ($r -and $r.StatusCode) { $code = [int]$r.StatusCode } else { $code = 0 }
+    }
+
+    if ($code -ge 200 -and $code -lt 300) {
+        Write-Host "  Connection: OK ($code)"
+    } else {
+        Write-Host "  Connection: FAILED (HTTP $code)"
+        Write-Host "  Check the token or your network."
+        exit 1
+    }
 }
 
 Write-Host ""

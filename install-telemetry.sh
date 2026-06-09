@@ -15,6 +15,10 @@
 #
 # Usage (curl pipe):
 #   OTLP_TOKEN=<token> bash -c "$(curl -fsSL https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/main/install-telemetry.sh)"
+#
+# Fleet/MDM mode (skip the post-install connectivity probe — install even
+# without network at enrollment time):
+#   OTLP_TOKEN=<token> SKIP_CONN_TEST=1 ./install-telemetry.sh
 
 set -euo pipefail
 
@@ -94,22 +98,30 @@ EOF
 sudo chown "$OWNER" "$SETTINGS_FILE"
 sudo chmod 0644 "$SETTINGS_FILE"
 
-# Verify the endpoint is reachable (real OTLP POST, not HEAD)
-echo "Testing connection to $ENDPOINT..."
-HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" \
-  -X POST "$ENDPOINT/v1/traces" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/x-protobuf" \
-  --data-binary '' \
-  --connect-timeout 5 \
-  --max-time 10 || echo "000")
-
-if [[ "$HTTP_CODE" =~ ^2[0-9][0-9]$ ]]; then
-  echo "  Connection: OK ($HTTP_CODE)"
+# Verify the endpoint is reachable (real OTLP POST, not HEAD).
+# Skipped when SKIP_CONN_TEST=1 — used by fleet/MDM deploys (e.g. Hexnode) where
+# the machine may have no network at enrollment time. In that mode the settings
+# file is still written; telemetry starts flowing the next time Claude Code
+# launches with network.
+if [ "${SKIP_CONN_TEST:-0}" = "1" ]; then
+  echo "Skipping connectivity test (SKIP_CONN_TEST=1)."
 else
-  echo "  Connection: FAILED (HTTP $HTTP_CODE)"
-  echo "  Check the token or your network."
-  exit 1
+  echo "Testing connection to $ENDPOINT..."
+  HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" \
+    -X POST "$ENDPOINT/v1/traces" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/x-protobuf" \
+    --data-binary '' \
+    --connect-timeout 5 \
+    --max-time 10 || echo "000")
+
+  if [[ "$HTTP_CODE" =~ ^2[0-9][0-9]$ ]]; then
+    echo "  Connection: OK ($HTTP_CODE)"
+  else
+    echo "  Connection: FAILED (HTTP $HTTP_CODE)"
+    echo "  Check the token or your network."
+    exit 1
+  fi
 fi
 
 echo ""

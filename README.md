@@ -10,10 +10,10 @@ prompt) and is never committed anywhere.
 
 | Pinned artifact | Tag | SHA256 |
 |---|---|---|
-| `install-telemetry.sh` (macOS/Linux) | `v5` | `cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae` |
-| `install-telemetry.ps1` (Windows) | `v5` | `d088578d419a93f3ab6e68788d6c4b3caf94b4bf5a3636c9f54e854c9d9e249f` |
-| `verify-telemetry.sh` (macOS/Linux) | `v5` | `0bf7f0156afe219ca18c813a62c7addcd5a30e6f56011e84d35fe05aef0adce1` |
-| `verify-telemetry.ps1` (Windows) | `v5` | `23d3c856537c70381643e1ecd5088863d661e3b4937b561f67e6c81729cd9e83` |
+| `install-telemetry.sh` (macOS/Linux) | `v6` | `861d2dd2f01f5958c85a5c295a580bf5e5ffc5b16b2b0b49f0c80643f7038ef6` |
+| `install-telemetry.ps1` (Windows) | `v6` | `5b0e717d002da686df5f5639fb471f71dd0b5418ed3e0c414eae644aec43c3b4` |
+| `verify-telemetry.sh` (macOS/Linux) | `v6` | `0bf7f0156afe219ca18c813a62c7addcd5a30e6f56011e84d35fe05aef0adce1` |
+| `verify-telemetry.ps1` (Windows) | `v6` | `23d3c856537c70381643e1ecd5088863d661e3b4937b561f67e6c81729cd9e83` |
 
 ## Install — macOS / Linux
 
@@ -26,8 +26,8 @@ You need:
 ### Recommended (token via interactive prompt — never enters shell history)
 
 ```bash
-REF=v4
-SHA256=cb53ddffa475add9fe5f6960e73e64f2724763ae8794cd3205b420677e2ea2ae
+REF=v6
+SHA256=861d2dd2f01f5958c85a5c295a580bf5e5ffc5b16b2b0b49f0c80643f7038ef6
 
 curl -fsSLO "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/install-telemetry.sh"
 echo "${SHA256}  install-telemetry.sh" | shasum -a 256 -c -
@@ -51,6 +51,20 @@ After install, **restart Claude Code** (close all windows and reopen).
 sudo OTLP_TOKEN='<token>' ./install-telemetry.sh
 ```
 
+### Fleet / MDM (skip post-install connectivity probe)
+
+For Hexnode/Jamf/other MDM policies where the laptop may not have network
+the moment the script runs, set `SKIP_CONN_TEST=1`. The `managed-settings.json`
+is written either way; telemetry starts flowing on next Claude Code launch
+with network.
+
+```bash
+sudo OTLP_TOKEN='<token>' SKIP_CONN_TEST=1 ./install-telemetry.sh
+```
+
+See [DEPLOY-HEXNODE.md](DEPLOY-HEXNODE.md) for ready-to-paste Hexnode
+policy bodies (macOS, Windows, Linux).
+
 ## Install — Windows
 
 You need:
@@ -64,8 +78,8 @@ You need:
 Open PowerShell **as Administrator**, then:
 
 ```powershell
-$ref = 'v4'
-$sha = 'd088578d419a93f3ab6e68788d6c4b3caf94b4bf5a3636c9f54e854c9d9e249f'
+$ref = 'v6'
+$sha = '5b0e717d002da686df5f5639fb471f71dd0b5418ed3e0c414eae644aec43c3b4'
 
 Invoke-WebRequest -UseBasicParsing `
   -Uri "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/$ref/install-telemetry.ps1" `
@@ -87,6 +101,18 @@ connectivity. **Restart Claude Code** after it finishes.
 $env:OTLP_TOKEN = '<token>'; .\install-telemetry.ps1
 ```
 
+### Fleet / MDM (skip post-install connectivity probe)
+
+Same idea as on Unix — set `SKIP_CONN_TEST=1` so the file is written even
+if the endpoint isn't reachable at policy run time.
+
+```powershell
+$env:OTLP_TOKEN = '<token>'; $env:SKIP_CONN_TEST = '1'; .\install-telemetry.ps1
+```
+
+See [DEPLOY-HEXNODE.md](DEPLOY-HEXNODE.md) for ready-to-paste Hexnode
+policy bodies.
+
 ## Verify
 
 Two ways. Pick the **diagnostic script** if a dev reports "no data in the
@@ -101,7 +127,7 @@ verify that Claude Code, which also runs as the user, can read the config.
 
 ```bash
 # macOS / Linux
-REF=v5
+REF=v6
 SHA256=0bf7f0156afe219ca18c813a62c7addcd5a30e6f56011e84d35fe05aef0adce1
 
 curl -fsSLO "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/verify-telemetry.sh"
@@ -112,7 +138,7 @@ chmod +x verify-telemetry.sh
 
 ```powershell
 # Windows (normal PowerShell, NOT elevated)
-$ref = 'v5'
+$ref = 'v6'
 $sha = '23d3c856537c70381643e1ecd5088863d661e3b4937b561f67e6c81729cd9e83'
 
 Invoke-WebRequest -UseBasicParsing `
