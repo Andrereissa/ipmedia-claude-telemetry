@@ -10,10 +10,15 @@ prompt) and is never committed anywhere.
 
 | Pinned artifact | Tag | SHA256 |
 |---|---|---|
-| `install-telemetry.sh` (macOS/Linux) | `v6` | `861d2dd2f01f5958c85a5c295a580bf5e5ffc5b16b2b0b49f0c80643f7038ef6` |
+| `install-telemetry.sh` (macOS/Linux) | `v7` | `62a70abb861cd94bbe81a8281cfd77ab02a07c99618b23b10dcb95646c0a11e9` |
 | `install-telemetry.ps1` (Windows) | `v6` | `5b0e717d002da686df5f5639fb471f71dd0b5418ed3e0c414eae644aec43c3b4` |
 | `verify-telemetry.sh` (macOS/Linux) | `v6` | `0bf7f0156afe219ca18c813a62c7addcd5a30e6f56011e84d35fe05aef0adce1` |
 | `verify-telemetry.ps1` (Windows) | `v6` | `23d3c856537c70381643e1ecd5088863d661e3b4937b561f67e6c81729cd9e83` |
+
+`v7` adds `machine.id` (derived from the computer name) to
+`OTEL_RESOURCE_ATTRIBUTES` so shared Claude accounts (e.g. `dev@`, `clc@`)
+are split per device in the dashboard instead of collapsing into one row.
+Override with `MACHINE_ID=<slug>` if the auto-derived name is wrong.
 
 ## Install — macOS / Linux
 
@@ -26,8 +31,8 @@ You need:
 ### Recommended (token via interactive prompt — never enters shell history)
 
 ```bash
-REF=v6
-SHA256=861d2dd2f01f5958c85a5c295a580bf5e5ffc5b16b2b0b49f0c80643f7038ef6
+REF=v7
+SHA256=62a70abb861cd94bbe81a8281cfd77ab02a07c99618b23b10dcb95646c0a11e9
 
 curl -fsSLO "https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/install-telemetry.sh"
 echo "${SHA256}  install-telemetry.sh" | shasum -a 256 -c -

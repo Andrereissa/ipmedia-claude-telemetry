@@ -24,15 +24,21 @@ with network.
 
 ## Pinning
 
-The snippets below pin `REF=v6` and check the SHA256. After cutting a new tag
-in this repo, update both `REF` and `SHA256` in the policy body — otherwise
-the SHA check fails and the policy errors out (intended: a SHA mismatch means
-the script changed underneath you, and you want to review before deploying).
+The snippets below pin the current tag and check the SHA256. After cutting a
+new tag in this repo, update both `REF` and `SHA256` in the policy body —
+otherwise the SHA check fails and the policy errors out (intended: a SHA
+mismatch means the script changed underneath you, and you want to review
+before deploying).
 
 | Artifact | Tag | SHA256 |
 |---|---|---|
-| `install-telemetry.sh` | `v6` | `861d2dd2f01f5958c85a5c295a580bf5e5ffc5b16b2b0b49f0c80643f7038ef6` |
+| `install-telemetry.sh` | `v7` | `62a70abb861cd94bbe81a8281cfd77ab02a07c99618b23b10dcb95646c0a11e9` |
 | `install-telemetry.ps1` | `v6` | `5b0e717d002da686df5f5639fb471f71dd0b5418ed3e0c414eae644aec43c3b4` |
+
+`v7` bumps the shell installer to derive a `machine.id` from the computer
+name and inject it into `OTEL_RESOURCE_ATTRIBUTES`, so shared Claude accounts
+split per device in the dashboard. The PowerShell installer is unchanged and
+stays pinned at `v6`.
 
 ## macOS — Hexnode "Execute Custom Script"
 
@@ -51,8 +57,8 @@ Paste this into the policy body, replacing `<OTLP_TOKEN_HERE>`:
 #!/bin/bash
 set -euo pipefail
 
-REF=v6
-SHA256=861d2dd2f01f5958c85a5c295a580bf5e5ffc5b16b2b0b49f0c80643f7038ef6
+REF=v7
+SHA256=62a70abb861cd94bbe81a8281cfd77ab02a07c99618b23b10dcb95646c0a11e9
 URL="https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/install-telemetry.sh"
 
 TMP=$(mktemp -t install-telemetry.XXXXXX.sh)
@@ -79,8 +85,8 @@ is needed. The body is identical to macOS except `shasum` → `sha256sum`:
 #!/bin/bash
 set -euo pipefail
 
-REF=v6
-SHA256=861d2dd2f01f5958c85a5c295a580bf5e5ffc5b16b2b0b49f0c80643f7038ef6
+REF=v7
+SHA256=62a70abb861cd94bbe81a8281cfd77ab02a07c99618b23b10dcb95646c0a11e9
 URL="https://raw.githubusercontent.com/Andrereissa/ipmedia-claude-telemetry/${REF}/install-telemetry.sh"
 
 TMP=$(mktemp -t install-telemetry.XXXXXX.sh)

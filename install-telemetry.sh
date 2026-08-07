@@ -56,9 +56,28 @@ esac
 
 SETTINGS_FILE="$SETTINGS_DIR/managed-settings.json"
 
+# Machine identity. user_email in the telemetry names the Claude ACCOUNT, and some accounts are
+# shared (dev@, clc@), so everything done on them collapses into one unattributable row. The
+# computer name splits it back apart. Derived automatically — nothing to type.
+case "$(uname -s)" in
+  Darwin*) MACHINE_RAW="$(scutil --get ComputerName 2>/dev/null || hostname -s)" ;;
+  *)       MACHINE_RAW="$(hostname -s 2>/dev/null || hostname)" ;;
+esac
+# Slug MACHINE_ID (also sanitises any MACHINE_ID override) to [a-z0-9-], ASCII-only, max 32 chars.
+# Interpolated into managed-settings.json below AND into OTEL_RESOURCE_ATTRIBUTES (which uses , and
+# = as separators, both of which the OTEL spec requires percent-encoded). Slugging sidesteps both.
+# Strip non-ASCII bytes rather than iconv//TRANSLIT: same input yields different results on
+# macOS/glibc/musl, and an id key needs to be stable across OSes.
+MACHINE_ID="$(printf '%s' "${MACHINE_ID:-$MACHINE_RAW}" \
+  | LC_ALL=C tr -d '\200-\377' \
+  | LC_ALL=C tr -cs '[:alnum:]' '-' | tr '[:upper:]' '[:lower:]' \
+  | sed -e 's/-\{1,\}/-/g' -e 's/^-//' -e 's/-$//' | cut -c1-32 | sed -e 's/-$//')"
+[ -n "$MACHINE_ID" ] || MACHINE_ID="unknown-machine"
+
 echo "Installing Claude Code telemetry config..."
-echo "  Endpoint: $ENDPOINT"
-echo "  Settings: $SETTINGS_FILE"
+echo "  Endpoint:   $ENDPOINT"
+echo "  Settings:   $SETTINGS_FILE"
+echo "  machine.id: $MACHINE_ID"
 echo ""
 
 # JSON-encode the token to handle quotes, backslashes, newlines safely.
@@ -85,7 +104,8 @@ sudo tee "$SETTINGS_FILE" > /dev/null <<EOF
     "OTEL_LOG_USER_PROMPTS": "1",
     "OTEL_LOG_TOOL_DETAILS": "1",
     "CLAUDE_CODE_ENHANCED_TELEMETRY_BETA": "1",
-    "OTEL_LOG_TOOL_CONTENT": "1"
+    "OTEL_LOG_TOOL_CONTENT": "1",
+    "OTEL_RESOURCE_ATTRIBUTES": "machine.id=$MACHINE_ID"
   }
 }
 EOF
